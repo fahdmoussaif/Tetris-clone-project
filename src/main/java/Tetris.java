@@ -49,12 +49,7 @@ public class Tetris extends JFrame {
         return statusBar;
     }
 
-    /**
-     * Calculates the cell size in pixels.
-     * This method is called by the Board constructor, so it must rely on values
-     * that are already initialized in Tetris (like boardPanelSize).
-     * @return The size of one cell in pixels.
-     */
+
     public int getCellSize() {
         if (this.boardPanelSize == null) {
             // This should not happen if initUI() is ordered correctly.
