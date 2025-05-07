@@ -8,124 +8,6 @@ import java.util.Random;
 
 public class Board extends JPanel implements ActionListener {
 
-    // Enum for Tetromino shapes, their coordinates, and colors
-    enum PieceShape {
-        NoShape(new int[][]{{0, 0}, {0, 0}, {0, 0}, {0, 0}}, new Color(0, 0, 0)),
-        ZShape(new int[][]{{0, -1}, {0, 0}, {-1, 0}, {-1, 1}}, new Color(204, 102, 102)),
-        SShape(new int[][]{{0, -1}, {0, 0}, {1, 0}, {1, 1}}, new Color(102, 204, 102)),
-        LineShape(new int[][]{{0, -1}, {0, 0}, {0, 1}, {0, 2}}, new Color(102, 102, 204)),
-        TShape(new int[][]{{-1, 0}, {0, 0}, {1, 0}, {0, 1}}, new Color(204, 204, 102)),
-        SquareShape(new int[][]{{0, 0}, {1, 0}, {0, 1}, {1, 1}}, new Color(204, 102, 204)),
-        LShape(new int[][]{{-1, 1}, {0, 1}, {0, 0}, {0, -1}}, new Color(102, 204, 204)), // Adjusted L for pivot
-        JShape(new int[][]{{1, 1}, {0, 1}, {0, 0}, {0, -1}}, new Color(204, 170, 102)); // Adjusted J for pivot
-
-        public final int[][] coords; // Relative coordinates of the 4 blocks from pivot
-        public final Color color;
-
-        PieceShape(int[][] coords, Color color) {
-            this.coords = coords;
-            this.color = color;
-        }
-
-        public static PieceShape getRandomShape() {
-            Random r = new Random();
-            PieceShape[] values = PieceShape.values();
-            return values[r.nextInt(values.length - 1) + 1]; // Exclude NoShape
-        }
-    }
-
-    // Class representing the currently falling Tetromino
-    static class Shape {
-        protected PieceShape pieceShape;
-        protected int[][] coords; // Current relative coordinates of the 4 blocks
-
-        public Shape() {
-            coords = new int[4][2];
-            setPieceShape(PieceShape.NoShape);
-        }
-
-
-        public int getTopmostRelativeY() {
-            int minY = coords[0][1];
-            for (int i = 1; i < 4; i++) {
-                if (coords[i][1] < minY) {
-                    minY = coords[i][1];
-                }
-            }
-            return minY;
-        }
-
-
-        public void setPieceShape(PieceShape shape) {
-            this.pieceShape = shape;
-            for (int i = 0; i < 4; i++) {
-                System.arraycopy(shape.coords[i], 0, this.coords[i], 0, 2);
-            }
-        }
-
-        public PieceShape getPieceShape() {
-            return pieceShape;
-        }
-
-        public Color getColor() {
-            return pieceShape.color;
-        }
-
-        public int getX(int index) {
-            return coords[index][0];
-        }
-
-        public int getY(int index) {
-            return coords[index][1];
-        }
-
-        public void setX(int index, int x) {
-            coords[index][0] = x;
-        }
-
-        public void setY(int index, int y) {
-            coords[index][1] = y;
-        }
-
-        // Rotation: returns a NEW Shape object with rotated coordinates
-        public Shape rotateRight() {
-            if (pieceShape == PieceShape.SquareShape) return this; // Square doesn't rotate
-
-            Shape newShape = new Shape();
-            newShape.setPieceShape(this.pieceShape); // Keep same type and color
-
-            for (int i = 0; i < 4; i++) {
-                newShape.setX(i, -getY(i)); // Clockwise: x' = -y
-                newShape.setY(i, getX(i));   //             y' =  x
-            }
-            return newShape;
-        }
-
-        public Shape rotateLeft() {
-            if (pieceShape == PieceShape.SquareShape) return this;
-
-            Shape newShape = new Shape();
-            newShape.setPieceShape(this.pieceShape);
-
-            for (int i = 0; i < 4; i++) {
-                newShape.setX(i, getY(i));   // Counter-clockwise: x' =  y
-                newShape.setY(i, -getX(i));  //                    y' = -x
-            }
-            return newShape;
-        }
-
-        // Helper to find the lowest Y coordinate (max Y value) for spawning logic
-        public int getLowestYCoord() {
-            int maxY = coords[0][1];
-            for (int i = 1; i < 4; i++) {
-                if (coords[i][1] > maxY) {
-                    maxY = coords[i][1];
-                }
-            }
-            return maxY;
-        }
-    }
-
     private static final int BOARD_WIDTH_CELLS = 10;
     private static final int BOARD_HEIGHT_CELLS_VISIBLE = 20;
     private static final int HIDDEN_ROWS_ABOVE = 2; // For pieces to spawn and rotate
@@ -172,7 +54,7 @@ public class Board extends JPanel implements ActionListener {
 
         currentPiece = new Shape();
         nextPiece = new Shape();
-        nextPiece.setPieceShape(PieceShape.getRandomShape()); // Pre-load the next piece
+        nextPiece.setPieceShape(Shape.PieceShape.getRandomShape()); // Pre-load the next piece
 
         timer = new Timer(400, this); // Game ticks every 400ms
     }
@@ -240,7 +122,7 @@ public class Board extends JPanel implements ActionListener {
 
 private void spawnNewPiece() {
     currentPiece.setPieceShape(nextPiece.getPieceShape());
-    nextPiece.setPieceShape(PieceShape.getRandomShape());
+    nextPiece.setPieceShape(Shape.PieceShape.getRandomShape());
 
     curPieceX = BOARD_WIDTH_CELLS / 2; // Center horizontally
 
@@ -259,7 +141,7 @@ private void spawnNewPiece() {
 
     if (!tryMove(currentPiece, curPieceX, curPieceY)) {
         // Game Over Condition: New piece cannot be placed even with adjusted Y
-        currentPiece.setPieceShape(PieceShape.NoShape);
+        currentPiece.setPieceShape(Shape.PieceShape.NoShape);
         timer.stop();
         isStarted = false;
         isFallingFinished = true; // Indicate game is truly finished
@@ -380,7 +262,7 @@ private void spawnNewPiece() {
         if (isPaused) {
             drawPauseScreen(g);
         }
-        if (!isStarted && currentPiece.getPieceShape() == PieceShape.NoShape && score > 0) { // Game over state
+        if (!isStarted && currentPiece.getPieceShape() == Shape.PieceShape.NoShape && score > 0) { // Game over state
             drawGameOverScreen(g);
         }
     }
@@ -417,7 +299,7 @@ private void spawnNewPiece() {
     }
 
     private void drawCurrentFallingPiece(Graphics g) {
-        if (currentPiece.getPieceShape() != PieceShape.NoShape) {
+        if (currentPiece.getPieceShape() != Shape.PieceShape.NoShape) {
             for (int i = 0; i < 4; i++) {
                 int xGrid = curPieceX + currentPiece.getX(i);
                 int yGrid = curPieceY + currentPiece.getY(i);
@@ -432,7 +314,7 @@ private void spawnNewPiece() {
     }
 
     private void drawNextPiecePreview(Graphics g) {
-        if (nextPiece.getPieceShape() != PieceShape.NoShape && isStarted) {
+        if (nextPiece.getPieceShape() != Shape.PieceShape.NoShape && isStarted) {
             int previewAreaX = (BOARD_WIDTH_CELLS + 1) * CELL_SIZE;
             int previewAreaY = CELL_SIZE; // Start preview one cell down from top
 
@@ -532,7 +414,7 @@ private void spawnNewPiece() {
             }
 
             // If game is over and currentPiece is NoShape, only allow 'S' to restart
-            if (currentPiece.getPieceShape() == PieceShape.NoShape && !isStarted) {
+            if (currentPiece.getPieceShape() == Shape.PieceShape.NoShape && !isStarted) {
                 if (e.getKeyCode() == KeyEvent.VK_S) {
                     start(); // Restart the game
                 }
