@@ -75,13 +75,6 @@ public class Shape {
         return minY;
     }
 
-    public int getLowestYCoord() {
-        int maxY = coords[0][1];
-        for (int i = 1; i < 4; i++) {
-            if (coords[i][1] > maxY) maxY = coords[i][1];
-        }
-        return maxY;
-    }
 
     public Shape rotateRight() {
         if (pieceShape == PieceShape.SquareShape) return this;

@@ -97,27 +97,6 @@ public class Board extends JPanel implements ActionListener {
             }
         }
     }
-/**
-    private void spawnNewPiece() {
-        currentPiece.setPieceShape(nextPiece.getPieceShape());
-        nextPiece.setPieceShape(PieceShape.getRandomShape());
-
-        curPieceX = BOARD_WIDTH_CELLS / 2;
-        // Spawn so the lowest part of the piece is near the top of the hidden area
-        curPieceY = HIDDEN_ROWS_ABOVE - 1 - currentPiece.getLowestYCoord();
-
-
-        if (!tryMove(currentPiece, curPieceX, curPieceY)) {
-            // Game Over Condition: New piece cannot be placed
-            currentPiece.setPieceShape(PieceShape.NoShape); // Make current piece disappear
-            timer.stop();
-            isStarted = false;
-            statusBar.setText("Game Over! Final Score: " + score + ". Press 'S' to Restart.");
-        }
-        updateStatusBar();
-    }
-
- **/
 
 
 private void spawnNewPiece() {
@@ -126,21 +105,11 @@ private void spawnNewPiece() {
 
     curPieceX = BOARD_WIDTH_CELLS / 2; // Center horizontally
 
-    // Adjust Y so the topmost block of the piece starts at board row 0 (top of hidden area)
-    // or slightly below if pieces are defined with all positive Y and pivot at top-left.
-    // Given our piece definitions (e.g. LineShape {{0,-1},..{0,2}}),
-    // we want curPieceY + topmost_relative_Y = 0 (or a bit more for deeper spawn).
-    // So, curPieceY = -currentPiece.getTopmostRelativeY().
-    // This will place the part of the shape with the smallest Y coordinate at board row 0.
+
     curPieceY = -currentPiece.getTopmostRelativeY();
 
-    // If we want to spawn it one row deeper into the hidden rows (if available):
-    // curPieceY = -currentPiece.getTopmostRelativeY() + 1;
-    // Ensure this doesn't conflict with HIDDEN_ROWS_ABOVE logic.
-    // For now, -getTopmostRelativeY() is a good start.
 
     if (!tryMove(currentPiece, curPieceX, curPieceY)) {
-        // Game Over Condition: New piece cannot be placed even with adjusted Y
         currentPiece.setPieceShape(Shape.PieceShape.NoShape);
         timer.stop();
         isStarted = false;
@@ -149,7 +118,7 @@ private void spawnNewPiece() {
     } else {
         isFallingFinished = false; // New piece spawned and can fall
     }
-    updateStatusBar(); // Ensure status bar is updated even on game over
+    updateStatusBar();
 }
 
 
