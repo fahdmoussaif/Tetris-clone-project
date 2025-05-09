@@ -10,7 +10,7 @@ public class Board extends JPanel implements ActionListener {
 
     private static final int BOARD_WIDTH_CELLS = 10;
     private static final int BOARD_HEIGHT_CELLS_VISIBLE = 20;
-    private static final int HIDDEN_ROWS_ABOVE = 2; // For pieces to spawn and rotate
+    private static final int HIDDEN_ROWS_ABOVE = 2; 
     private static final int TOTAL_BOARD_HEIGHT_CELLS = BOARD_HEIGHT_CELLS_VISIBLE + HIDDEN_ROWS_ABOVE;
 
     private final int CELL_SIZE;
@@ -23,14 +23,14 @@ public class Board extends JPanel implements ActionListener {
     private int numLinesRemoved = 0;
     private int score = 0;
 
-    // Current piece's pivot point position on the board grid
+
     private int curPieceX = 0;
     private int curPieceY = 0;
 
     private Shape currentPiece;
     private Shape nextPiece;
 
-    // The game grid: stores the Color of landed pieces, null if empty
+
     private Color[][] grid;
 
     private JLabel statusBar;
@@ -39,7 +39,6 @@ public class Board extends JPanel implements ActionListener {
     public Board(Tetris parent) {
         this.parentFrame = parent;
         this.statusBar = parent.getStatusBar();
-        // Calculate CELL_SIZE based on the preferred size passed from Tetris main frame
         this.CELL_SIZE = parent.getCellSize();
         initBoard();
     }
@@ -47,16 +46,16 @@ public class Board extends JPanel implements ActionListener {
     private void initBoard() {
         setFocusable(true);
         addKeyListener(new TAdapter());
-        setBackground(Color.BLACK); // Background for the game area
+        setBackground(Color.BLACK); 
 
         grid = new Color[BOARD_WIDTH_CELLS][TOTAL_BOARD_HEIGHT_CELLS];
         clearBoardGrid();
 
         currentPiece = new Shape();
         nextPiece = new Shape();
-        nextPiece.setPieceShape(Shape.PieceShape.getRandomShape()); // Pre-load the next piece
+        nextPiece.setPieceShape(Shape.PieceShape.getRandomShape()); 
 
-        timer = new Timer(400, this); // Game ticks every 400ms
+        timer = new Timer(400, this); 
     }
 
     public void start() {
@@ -73,7 +72,7 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private void pause() {
-        if (!isStarted || isFallingFinished) return; // Can't pause if not started or game over
+        if (!isStarted || isFallingFinished) return; 
 
         isPaused = !isPaused;
         if (isPaused) {
@@ -81,9 +80,9 @@ public class Board extends JPanel implements ActionListener {
             statusBar.setText("Paused. Score: " + score);
         } else {
             timer.start();
-            updateStatusBar(); // Restore normal status text
+            updateStatusBar(); 
         }
-        repaint(); // To draw/clear the pause message
+        repaint(); 
     }
 
     private void updateStatusBar() {
@@ -103,7 +102,7 @@ private void spawnNewPiece() {
     currentPiece.setPieceShape(nextPiece.getPieceShape());
     nextPiece.setPieceShape(Shape.PieceShape.getRandomShape());
 
-    curPieceX = BOARD_WIDTH_CELLS / 2; // Center horizontally
+    curPieceX = BOARD_WIDTH_CELLS / 2; 
 
 
     curPieceY = -currentPiece.getTopmostRelativeY();
@@ -113,10 +112,10 @@ private void spawnNewPiece() {
         currentPiece.setPieceShape(Shape.PieceShape.NoShape);
         timer.stop();
         isStarted = false;
-        isFallingFinished = true; // Indicate game is truly finished
+        isFallingFinished = true; 
         statusBar.setText("Game Over! Final Score: " + score + ". Press 'S' to Restart.");
     } else {
-        isFallingFinished = false; // New piece spawned and can fall
+        isFallingFinished = false; 
     }
     updateStatusBar();
 }
@@ -128,18 +127,15 @@ private void spawnNewPiece() {
             int boardX = newX + pieceToTry.getX(i);
             int boardY = newY + pieceToTry.getY(i);
 
-            // Boundary checks
             if (boardX < 0 || boardX >= BOARD_WIDTH_CELLS || boardY < 0 || boardY >= TOTAL_BOARD_HEIGHT_CELLS) {
                 return false;
             }
-            // Collision with existing pieces on the grid
             if (grid[boardX][boardY] != null) { // null means empty
                 return false;
             }
         }
 
-        // If all checks pass, update current piece and its position
-        currentPiece = pieceToTry; // This is important if pieceToTry was a rotated copy
+        currentPiece = pieceToTry; 
         curPieceX = newX;
         curPieceY = newY;
         repaint();
@@ -147,11 +143,9 @@ private void spawnNewPiece() {
     }
 
     private void pieceLanded() {
-        // Add the blocks of the current piece to the grid
         for (int i = 0; i < 4; i++) {
             int boardX = curPieceX + currentPiece.getX(i);
             int boardY = curPieceY + currentPiece.getY(i);
-            // Check bounds before placing, though tryMove should prevent out-of-bounds placements
             if (boardX >= 0 && boardX < BOARD_WIDTH_CELLS && boardY >= 0 && boardY < TOTAL_BOARD_HEIGHT_CELLS) {
                 grid[boardX][boardY] = currentPiece.getColor();
             }
@@ -159,7 +153,7 @@ private void spawnNewPiece() {
 
         removeFullLines();
 
-        if (!isFallingFinished) { // isFallingFinished might be set true by game over in removeFullLines
+        if (!isFallingFinished) { 
             spawnNewPiece();
         }
     }
@@ -181,7 +175,7 @@ private void spawnNewPiece() {
 
     private void removeFullLines() {
         int numFullLinesInThisTurn = 0;
-        for (int y = TOTAL_BOARD_HEIGHT_CELLS - 1; y >= 0; y--) { // Iterate from bottom up
+        for (int y = TOTAL_BOARD_HEIGHT_CELLS - 1; y >= 0; y--) { 
             boolean lineIsFull = true;
             for (int x = 0; x < BOARD_WIDTH_CELLS; x++) {
                 if (grid[x][y] == null) {
@@ -192,38 +186,33 @@ private void spawnNewPiece() {
 
             if (lineIsFull) {
                 numFullLinesInThisTurn++;
-                // Move all lines above this one, down by one row
                 for (int currentY = y; currentY > 0; currentY--) {
                     for (int x = 0; x < BOARD_WIDTH_CELLS; x++) {
                         grid[x][currentY] = grid[x][currentY - 1];
                     }
                 }
-                // Clear the topmost line (it's now empty as everything shifted down)
                 for (int x = 0; x < BOARD_WIDTH_CELLS; x++) {
                     grid[x][0] = null;
                 }
-                // Since a line was removed and lines shifted, re-check the current row 'y' again
                 y++;
             }
         }
 
         if (numFullLinesInThisTurn > 0) {
             numLinesRemoved += numFullLinesInThisTurn;
-            // Basic scoring: 100 for 1 line, 300 for 2, 500 for 3, 800 for 4 (Tetris)
             if (numFullLinesInThisTurn == 1) score += 100;
             else if (numFullLinesInThisTurn == 2) score += 300;
             else if (numFullLinesInThisTurn == 3) score += 500;
-            else if (numFullLinesInThisTurn == 4) score += 800; // Tetris!
+            else if (numFullLinesInThisTurn == 4) score += 800; 
 
             updateStatusBar();
-            // isFallingFinished = false; // Game continues after clearing lines
         }
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        drawGameArea(g); // Draw grid lines and background
+        drawGameArea(g); 
         drawLandedPieces(g);
         drawCurrentFallingPiece(g);
         drawNextPiecePreview(g);
@@ -231,7 +220,7 @@ private void spawnNewPiece() {
         if (isPaused) {
             drawPauseScreen(g);
         }
-        if (!isStarted && currentPiece.getPieceShape() == Shape.PieceShape.NoShape && score > 0) { // Game over state
+        if (!isStarted && currentPiece.getPieceShape() == Shape.PieceShape.NoShape && score > 0) { 
             drawGameOverScreen(g);
         }
     }
@@ -241,15 +230,14 @@ private void spawnNewPiece() {
         int boardPixelWidth = BOARD_WIDTH_CELLS * CELL_SIZE;
         int boardPixelHeight = BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE;
 
-        g.setColor(getBackground()); // Should be Color.BLACK as set in initBoard
+        g.setColor(getBackground()); 
         g.fillRect(0, 0, size.width, size.height);
 
-        // Draw grid lines for the visible part of the board
         g.setColor(Color.DARK_GRAY);
-        for (int i = 0; i <= BOARD_WIDTH_CELLS; i++) { // Vertical lines
+        for (int i = 0; i <= BOARD_WIDTH_CELLS; i++) {
             g.drawLine(i * CELL_SIZE, 0, i * CELL_SIZE, boardPixelHeight);
         }
-        for (int i = 0; i <= BOARD_HEIGHT_CELLS_VISIBLE; i++) { // Horizontal lines
+        for (int i = 0; i <= BOARD_HEIGHT_CELLS_VISIBLE; i++) { 
             g.drawLine(0, i * CELL_SIZE, boardPixelWidth, i * CELL_SIZE);
         }
     }
@@ -257,10 +245,9 @@ private void spawnNewPiece() {
 
     private void drawLandedPieces(Graphics g) {
         for (int x = 0; x < BOARD_WIDTH_CELLS; x++) {
-            // Only draw visible rows (j starts from HIDDEN_ROWS_ABOVE in grid coordinates)
             for (int yGrid = HIDDEN_ROWS_ABOVE; yGrid < TOTAL_BOARD_HEIGHT_CELLS; yGrid++) {
                 if (grid[x][yGrid] != null) {
-                    int yScreen = yGrid - HIDDEN_ROWS_ABOVE; // Convert grid Y to screen Y
+                    int yScreen = yGrid - HIDDEN_ROWS_ABOVE; 
                     drawSquare(g, x * CELL_SIZE, yScreen * CELL_SIZE, grid[x][yGrid]);
                 }
             }
@@ -273,7 +260,6 @@ private void spawnNewPiece() {
                 int xGrid = curPieceX + currentPiece.getX(i);
                 int yGrid = curPieceY + currentPiece.getY(i);
 
-                // Only draw if the block is within the visible part of the board
                 if (yGrid >= HIDDEN_ROWS_ABOVE) {
                     int yScreen = yGrid - HIDDEN_ROWS_ABOVE;
                     drawSquare(g, xGrid * CELL_SIZE, yScreen * CELL_SIZE, currentPiece.getColor());
@@ -285,12 +271,11 @@ private void spawnNewPiece() {
     private void drawNextPiecePreview(Graphics g) {
         if (nextPiece.getPieceShape() != Shape.PieceShape.NoShape && isStarted) {
             int previewAreaX = (BOARD_WIDTH_CELLS + 1) * CELL_SIZE;
-            int previewAreaY = CELL_SIZE; // Start preview one cell down from top
+            int previewAreaY = CELL_SIZE; 
 
             g.setColor(Color.LIGHT_GRAY);
             g.drawString("Next:", previewAreaX, previewAreaY);
 
-            // Find center of preview piece to align it
             int minPieceX = 0, maxPieceX = 0, minPieceY = 0, maxPieceY = 0;
             for(int i=0; i<4; i++){
                 minPieceX = Math.min(minPieceX, nextPiece.getX(i));
@@ -298,7 +283,6 @@ private void spawnNewPiece() {
                 minPieceY = Math.min(minPieceY, nextPiece.getY(i));
                 maxPieceY = Math.max(maxPieceY, nextPiece.getY(i));
             }
-            // Offset to draw piece centered in a small 4x4 cell area
             int offsetX = previewAreaX + (2 - (minPieceX + maxPieceX)/2) * CELL_SIZE;
             int offsetY = previewAreaY + CELL_SIZE + (2 - (minPieceY + maxPieceY)/2) * CELL_SIZE;
 
@@ -315,18 +299,17 @@ private void spawnNewPiece() {
         g.setColor(color);
         g.fillRect(screenX + 1, screenY + 1, CELL_SIZE - 2, CELL_SIZE - 2);
 
-        // Simple 3D effect
         g.setColor(color.brighter());
-        g.drawLine(screenX, screenY + CELL_SIZE - 1, screenX, screenY); // Left edge
-        g.drawLine(screenX, screenY, screenX + CELL_SIZE - 1, screenY); // Top edge
+        g.drawLine(screenX, screenY + CELL_SIZE - 1, screenX, screenY); 
+        g.drawLine(screenX, screenY, screenX + CELL_SIZE - 1, screenY); 
 
         g.setColor(color.darker());
-        g.drawLine(screenX + 1, screenY + CELL_SIZE - 1, screenX + CELL_SIZE - 1, screenY + CELL_SIZE - 1); // Bottom edge
-        g.drawLine(screenX + CELL_SIZE - 1, screenY + CELL_SIZE - 1, screenX + CELL_SIZE - 1, screenY + 1); // Right edge
+        g.drawLine(screenX + 1, screenY + CELL_SIZE - 1, screenX + CELL_SIZE - 1, screenY + CELL_SIZE - 1); 
+        g.drawLine(screenX + CELL_SIZE - 1, screenY + CELL_SIZE - 1, screenX + CELL_SIZE - 1, screenY + 1); 
     }
 
     private void drawPauseScreen(Graphics g) {
-        g.setColor(new Color(50, 50, 50, 180)); // Semi-transparent dark overlay
+        g.setColor(new Color(50, 50, 50, 180)); 
         g.fillRect(0, 0, BOARD_WIDTH_CELLS * CELL_SIZE, BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE);
         g.setColor(Color.WHITE);
         g.setFont(new Font("Helvetica", Font.BOLD, 20));
@@ -337,7 +320,7 @@ private void spawnNewPiece() {
     }
 
     private void drawGameOverScreen(Graphics g) {
-        g.setColor(new Color(50, 50, 50, 200)); // Darker overlay for game over
+        g.setColor(new Color(50, 50, 50, 200)); 
         g.fillRect(0, 0, BOARD_WIDTH_CELLS * CELL_SIZE, BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE);
         g.setColor(Color.RED);
         g.setFont(new Font("Helvetica", Font.BOLD, 24));
@@ -350,7 +333,7 @@ private void spawnNewPiece() {
         g.setFont(new Font("Helvetica", Font.PLAIN, 14));
         String scoreMsg = "Final Score: " + score;
         int scoreMsgWidth = fm.stringWidth(scoreMsg);
-        g.drawString(scoreMsg, (BOARD_WIDTH_CELLS * CELL_SIZE - scoreMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE) / 2 + 10); // Adjust font metrics for this string
+        g.drawString(scoreMsg, (BOARD_WIDTH_CELLS * CELL_SIZE - scoreMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE) / 2 + 10); 
 
         String restartMsg = "Press 'S' to Restart";
         int restartMsgWidth = fm.stringWidth(restartMsg);
@@ -359,39 +342,35 @@ private void spawnNewPiece() {
 
 
     @Override
-    public void actionPerformed(ActionEvent e) { // Called by the Timer
-        if (isFallingFinished) { // This flag is mostly for game over scenarios
-            // isFallingFinished = false; // Handled by spawnNewPiece or game over logic
-            // spawnNewPiece();
-            return; // If game over, timer might still fire once.
+    public void actionPerformed(ActionEvent e) { 
+        if (isFallingFinished) { 
+            return; 
         }
         if (!isPaused && isStarted) {
             oneLineDown();
         }
-        repaint(); // Always repaint to reflect changes or no-changes (if paused)
+        repaint(); 
     }
 
-    // Adapter for keyboard input
     class TAdapter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
-            if (!isStarted) { // If game hasn't started
+            if (!isStarted) { 
                 if (e.getKeyCode() == KeyEvent.VK_S) {
                     start();
                 }
                 return;
             }
 
-            // If game is over and currentPiece is NoShape, only allow 'S' to restart
             if (currentPiece.getPieceShape() == Shape.PieceShape.NoShape && !isStarted) {
                 if (e.getKeyCode() == KeyEvent.VK_S) {
-                    start(); // Restart the game
+                    start(); 
                 }
                 return;
             }
 
 
-            if (isPaused && e.getKeyCode() != KeyEvent.VK_P) { // If paused, only 'P' works
+            if (isPaused && e.getKeyCode() != KeyEvent.VK_P) { 
                 return;
             }
 
@@ -409,19 +388,18 @@ private void spawnNewPiece() {
                 case KeyEvent.VK_D:
                     tryMove(currentPiece, curPieceX + 1, curPieceY);
                     break;
-                case KeyEvent.VK_DOWN: // Soft drop
+                case KeyEvent.VK_DOWN: 
                 case KeyEvent.VK_S:
-                    if (!isPaused) oneLineDown(); // Avoid soft drop making timer run faster essentially
+                    if (!isPaused) oneLineDown();
                     break;
-                case KeyEvent.VK_UP: // Rotate Right
+                case KeyEvent.VK_UP:
                 case KeyEvent.VK_W:
                     tryMove(currentPiece.rotateRight(), curPieceX, curPieceY);
                     break;
-                case KeyEvent.VK_Z: // Rotate Left (alternative)
-                    // case KeyEvent.VK_CONTROL: // Some use CTRL for rotate left
+                case KeyEvent.VK_Z: 
                     tryMove(currentPiece.rotateLeft(), curPieceX, curPieceY);
                     break;
-                case KeyEvent.VK_SPACE: // Hard drop
+                case KeyEvent.VK_SPACE: 
                     dropDownHard();
                     break;
             }
