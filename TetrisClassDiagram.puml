@@ -1,0 +1,73 @@
+@startuml TetrisClassDiagram
+enum PieceShape {
+  NoShape
+  ZShape
+  SShape
+  LineShape
+  TShape
+  SquareShape
+  LShape
+  JShape
+}
+
+class Shape {
+  - PieceShape pieceShape
+  - int[][] coords
+  + Shape()
+  + void setPieceShape(PieceShape shape)
+  + PieceShape getPieceShape()
+  + Color getColor()
+  + int getX(int index)
+  + int getY(int index)
+  + void setX(int index, int x)
+  + void setY(int index, int y)
+  + int getTopmostRelativeY()
+  + Shape rotateRight()
+  + Shape rotateLeft()
+}
+
+Shape --> PieceShape
+
+class Board {
+  - Timer timer
+  - boolean isFallingFinished
+  - boolean isStarted
+  - boolean isPaused
+  - int numLinesRemoved
+  - int currentX
+  - int currentY
+  - Shape currentPiece
+  - Shape.Tetrominoes[] board
+  - Tetris parent
+  + Board(Tetris parent)
+  + void start()
+  + void pause()
+  + void paintComponent(Graphics g)
+  + void actionPerformed(ActionEvent e)
+  + void keyPressed(KeyEvent e)
+  + void dropDown()
+  + void oneLineDown()
+  + void clearBoard()
+  + void pieceDropped()
+  + void newPiece()
+  + void tryMove(Shape newPiece, int newX, int newY)
+  + void removeFullLines()
+  + Color getCellColor(int x, int y)
+}
+
+Board --> Shape
+Board --> Tetris
+
+class Tetris {
+  - JLabel statusBar
+  - Board board
+  - Dimension boardPanelSize
+  + Tetris()
+  + JLabel getStatusBar()
+  + int getCellSize()
+  + static void main(String[] args)
+}
+
+Tetris --> Board
+Tetris --> JLabel
+@enduml
