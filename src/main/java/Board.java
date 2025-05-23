@@ -33,12 +33,10 @@ public class Board extends JPanel implements ActionListener {
 
     private Color[][] grid;
 
-    private JLabel statusBar;
     private Tetris parentFrame;
 
     public Board(Tetris parent) {
         this.parentFrame = parent;
-        this.statusBar = parent.getStatusBar();
         initBoard();
     }
 
@@ -76,7 +74,7 @@ public class Board extends JPanel implements ActionListener {
         isPaused = !isPaused;
         if (isPaused) {
             timer.stop();
-            statusBar.setText("Paused. Score: " + score);
+            // Optionally show pause in side panel or overlay
         } else {
             timer.start();
             updateStatusBar(); 
@@ -85,7 +83,9 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private void updateStatusBar() {
-        statusBar.setText("Score: " + score + " Lines: " + numLinesRemoved);
+        // Remove: statusBar.setText(...)
+        parentFrame.updateScoreAndLines(score, numLinesRemoved);
+        // Optionally, show instructions somewhere else
     }
 
     private void clearBoardGrid() {
@@ -107,12 +107,15 @@ private void spawnNewPiece() {
     curPieceY = -currentPiece.getTopmostRelativeY();
 
 
+    // Update next shape preview panel
+    parentFrame.getNextPanel().setNextShape(nextPiece);
+
     if (!tryMove(currentPiece, curPieceX, curPieceY)) {
         currentPiece.setPieceShape(Shape.PieceShape.NoShape);
         timer.stop();
         isStarted = false;
         isFallingFinished = true; 
-        statusBar.setText("Game Over! Final Score: " + score + ". Press 'S' to Restart.");
+        // Optionally show game over in side panel or overlay
     } else {
         isFallingFinished = false; 
     }
@@ -215,7 +218,6 @@ private void spawnNewPiece() {
         drawGameArea(g); 
         drawLandedPieces(g);
         drawCurrentFallingPiece(g);
-        drawNextPiecePreview(g);
 
         if (isPaused) {
             drawPauseScreen(g);
@@ -229,9 +231,10 @@ private void spawnNewPiece() {
     public void updateCellSize() {
         Dimension size = getSize();
         if (size.width > 0 && size.height > 0) {
+            // Fill as much as possible, keep cells square
             cellSize = Math.min(
-                size.width / Tetris.BOARD_WIDTH_IN_CELLS,
-                size.height / Tetris.BOARD_HEIGHT_IN_CELLS_VISIBLE
+                size.width / BOARD_WIDTH_CELLS,
+                size.height / BOARD_HEIGHT_CELLS_VISIBLE
             );
         }
     }
@@ -275,33 +278,6 @@ private void spawnNewPiece() {
                     int yScreen = yGrid - HIDDEN_ROWS_ABOVE;
                     drawSquare(g, xGrid * cellSize, yScreen * cellSize, currentPiece.getColor());
                 }
-            }
-        }
-    }
-
-    private void drawNextPiecePreview(Graphics g) {
-        if (nextPiece.getPieceShape() != Shape.PieceShape.NoShape && isStarted) {
-            int previewAreaX = (BOARD_WIDTH_CELLS + 1) * cellSize;
-            int previewAreaY = cellSize; 
-
-            g.setColor(Color.LIGHT_GRAY);
-            g.drawString("Next:", previewAreaX, previewAreaY);
-
-            int minPieceX = 0, maxPieceX = 0, minPieceY = 0, maxPieceY = 0;
-            for(int i=0; i<4; i++){
-                minPieceX = Math.min(minPieceX, nextPiece.getX(i));
-                maxPieceX = Math.max(maxPieceX, nextPiece.getX(i));
-                minPieceY = Math.min(minPieceY, nextPiece.getY(i));
-                maxPieceY = Math.max(maxPieceY, nextPiece.getY(i));
-            }
-            int offsetX = previewAreaX + (2 - (minPieceX + maxPieceX)/2) * cellSize;
-            int offsetY = previewAreaY + cellSize + (2 - (minPieceY + maxPieceY)/2) * cellSize;
-
-
-            for (int i = 0; i < 4; i++) {
-                int x = nextPiece.getX(i);
-                int y = nextPiece.getY(i);
-                drawSquare(g, offsetX + x * cellSize, offsetY + y * cellSize, nextPiece.getColor());
             }
         }
     }
