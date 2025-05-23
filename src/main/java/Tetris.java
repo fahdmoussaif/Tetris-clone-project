@@ -3,7 +3,7 @@ import java.awt.*;
 
 public class Tetris extends JFrame {
 
-    private Board board; // <-- Add this line
+    private Board board;
     private JLabel scoreLabel;
     private JLabel linesLabel;
     private NextPanel nextPanel;
@@ -16,17 +16,59 @@ public class Tetris extends JFrame {
     }
 
     private void initUI() {
-        // Use BorderLayout for the frame
-        setLayout(new BorderLayout());
-        setBackground(Color.DARK_GRAY);
+        // Use a panel with GridBagLayout to tightly pack board, instructions, and side panel
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setBackground(Color.DARK_GRAY);
 
-        // Board panel (will expand to fill center)
+        // Board panel
         board = new Board(this);
         board.setBackground(Color.BLACK);
         board.setMinimumSize(new Dimension(300, 600));
-        add(board, BorderLayout.CENTER);
+        board.setPreferredSize(new Dimension(480, 960));
 
-        // Side panel for next shape and score
+        // Instructions panel (middle)
+        JPanel instructionsPanel = new JPanel();
+        instructionsPanel.setLayout(new BoxLayout(instructionsPanel, BoxLayout.Y_AXIS));
+        instructionsPanel.setBackground(new Color(25, 25, 25));
+        instructionsPanel.setBorder(BorderFactory.createEmptyBorder(40, 30, 40, 30));
+        instructionsPanel.setMinimumSize(new Dimension(250, 200));
+        instructionsPanel.setPreferredSize(new Dimension(300, 400));
+
+        JLabel title = new JLabel("How to Play");
+        title.setForeground(Color.ORANGE);
+        title.setFont(new Font("Arial", Font.BOLD, 24));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JTextArea instructions = new JTextArea(
+            """
+            Press 'S' to Start or Restart
+
+            Controls:
+            - Left/Right Arrow or A/D: Move
+            - Down Arrow or S: Soft Drop
+            - Up Arrow or W: Rotate Right
+            - Z: Rotate Left
+            - Space: Hard Drop
+            - P: Pause/Resume
+
+            Clear lines for points!
+            """
+        );
+        instructions.setEditable(false);
+        instructions.setFocusable(false);
+        instructions.setOpaque(false);
+        instructions.setForeground(Color.WHITE);
+        instructions.setFont(new Font("Arial", Font.PLAIN, 16));
+        instructions.setAlignmentX(Component.CENTER_ALIGNMENT);
+        instructions.setLineWrap(true);
+        instructions.setWrapStyleWord(true);
+
+        instructionsPanel.add(title);
+        instructionsPanel.add(Box.createVerticalStrut(20));
+        instructionsPanel.add(instructions);
+        instructionsPanel.add(Box.createVerticalGlue());
+
+        // Side panel for next shape and score (right)
         JPanel sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         sidePanel.setBackground(new Color(30, 30, 30));
@@ -61,7 +103,31 @@ public class Tetris extends JFrame {
 
         sidePanel.add(Box.createVerticalGlue());
 
-        add(sidePanel, BorderLayout.EAST);
+        // Layout constraints for board, instructions, and side panel
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.anchor = GridBagConstraints.CENTER;
+
+        // Board: take as much space as possible (left)
+        gbc.gridx = 0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        mainPanel.add(board, gbc);
+
+        // Instructions panel (middle)
+        gbc.gridx = 1;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        mainPanel.add(instructionsPanel, gbc);
+
+        // Side panel: fixed width, fill vertically (right)
+        gbc.gridx = 2;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        mainPanel.add(sidePanel, gbc);
+
+        setContentPane(mainPanel);
 
         setTitle("Simple Tetris");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -70,7 +136,6 @@ public class Tetris extends JFrame {
         setLocationRelativeTo(null);
         setResizable(true);
 
-        // Repaint board and next panel on resize
         addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentResized(java.awt.event.ComponentEvent evt) {
                 board.updateCellSize();
@@ -90,7 +155,6 @@ public class Tetris extends JFrame {
     }
 
     public int getCellSize() {
-        // Not used anymore, cell size is computed in Board based on panel size
         return 0;
     }
 
@@ -101,7 +165,6 @@ public class Tetris extends JFrame {
         });
     }
 
-    // Panel for next shape preview
     public static class NextPanel extends JPanel {
         private Shape nextShape;
 
@@ -119,7 +182,6 @@ public class Tetris extends JFrame {
             int offsetX = getWidth() / 2;
             int offsetY = getHeight() / 2;
 
-            // Center the shape
             int minX = 0, maxX = 0, minY = 0, maxY = 0;
             for (int i = 0; i < 4; i++) {
                 minX = Math.min(minX, nextShape.getX(i));
