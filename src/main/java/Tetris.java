@@ -34,9 +34,17 @@ public class Tetris extends JFrame {
         pack(); 
 
         setLocationRelativeTo(null); 
-        setResizable(false);
+        setResizable(true); // Allow resizing
 
         statusBar.setText("Press 'S' to Start. Arrows/WASD to move, UP/W/Z to rotate, SPACE to drop, P to pause.");
+
+        // Listen for resize events to repaint the board
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                board.updateCellSize(); // No arguments needed
+                board.repaint();
+            }
+        });
     }
 
     public JLabel getStatusBar() {
