@@ -222,7 +222,8 @@ private void spawnNewPiece() {
         if (isPaused) {
             drawPauseScreen(g);
         }
-        if (!isStarted && currentPiece.getPieceShape() == Shape.PieceShape.NoShape && score > 0) { 
+        // Show Game Over overlay if game is finished and not started
+        if (isFallingFinished && !isStarted) {
             drawGameOverScreen(g);
         }
     }
