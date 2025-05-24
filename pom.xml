@@ -19,7 +19,7 @@
         <profile>
             <id>java21</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
                 <java.version>21</java.version>

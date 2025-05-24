@@ -13,7 +13,7 @@ public class Board extends JPanel implements ActionListener {
     private static final int HIDDEN_ROWS_ABOVE = 2; 
     private static final int TOTAL_BOARD_HEIGHT_CELLS = BOARD_HEIGHT_CELLS_VISIBLE + HIDDEN_ROWS_ABOVE;
 
-    private final int CELL_SIZE;
+    private int cellSize;
 
     private Timer timer;
     private boolean isFallingFinished = false;
@@ -33,13 +33,10 @@ public class Board extends JPanel implements ActionListener {
 
     private Color[][] grid;
 
-    private JLabel statusBar;
     private Tetris parentFrame;
 
     public Board(Tetris parent) {
         this.parentFrame = parent;
-        this.statusBar = parent.getStatusBar();
-        this.CELL_SIZE = parent.getCellSize();
         initBoard();
     }
 
@@ -77,7 +74,7 @@ public class Board extends JPanel implements ActionListener {
         isPaused = !isPaused;
         if (isPaused) {
             timer.stop();
-            statusBar.setText("Paused. Score: " + score);
+            // Optionally show pause in side panel or overlay
         } else {
             timer.start();
             updateStatusBar(); 
@@ -86,7 +83,9 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private void updateStatusBar() {
-        statusBar.setText("Score: " + score + " Lines: " + numLinesRemoved);
+        // Remove: statusBar.setText(...)
+        parentFrame.updateScoreAndLines(score, numLinesRemoved);
+        // Optionally, show instructions somewhere else
     }
 
     private void clearBoardGrid() {
@@ -108,12 +107,15 @@ private void spawnNewPiece() {
     curPieceY = -currentPiece.getTopmostRelativeY();
 
 
+    // Update next shape preview panel
+    parentFrame.getNextPanel().setNextShape(nextPiece);
+
     if (!tryMove(currentPiece, curPieceX, curPieceY)) {
         currentPiece.setPieceShape(Shape.PieceShape.NoShape);
         timer.stop();
         isStarted = false;
         isFallingFinished = true; 
-        statusBar.setText("Game Over! Final Score: " + score + ". Press 'S' to Restart.");
+        // Optionally show game over in side panel or overlay
     } else {
         isFallingFinished = false; 
     }
@@ -212,33 +214,46 @@ private void spawnNewPiece() {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        updateCellSize(); // Call without arguments
         drawGameArea(g); 
         drawLandedPieces(g);
         drawCurrentFallingPiece(g);
-        drawNextPiecePreview(g);
 
         if (isPaused) {
             drawPauseScreen(g);
         }
-        if (!isStarted && currentPiece.getPieceShape() == Shape.PieceShape.NoShape && score > 0) { 
+        // Show Game Over overlay if game is finished and not started
+        if (isFallingFinished && !isStarted) {
             drawGameOverScreen(g);
+        }
+    }
+
+    // Remove any old updateCellSize(Graphics g) method and use this:
+    public void updateCellSize() {
+        Dimension size = getSize();
+        if (size.width > 0 && size.height > 0) {
+            // Fill as much as possible, keep cells square
+            cellSize = Math.min(
+                size.width / BOARD_WIDTH_CELLS,
+                size.height / BOARD_HEIGHT_CELLS_VISIBLE
+            );
         }
     }
 
     private void drawGameArea(Graphics g) {
         Dimension size = getSize();
-        int boardPixelWidth = BOARD_WIDTH_CELLS * CELL_SIZE;
-        int boardPixelHeight = BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE;
+        int boardPixelWidth = BOARD_WIDTH_CELLS * cellSize;
+        int boardPixelHeight = BOARD_HEIGHT_CELLS_VISIBLE * cellSize;
 
         g.setColor(getBackground()); 
         g.fillRect(0, 0, size.width, size.height);
 
         g.setColor(Color.DARK_GRAY);
         for (int i = 0; i <= BOARD_WIDTH_CELLS; i++) {
-            g.drawLine(i * CELL_SIZE, 0, i * CELL_SIZE, boardPixelHeight);
+            g.drawLine(i * cellSize, 0, i * cellSize, boardPixelHeight);
         }
         for (int i = 0; i <= BOARD_HEIGHT_CELLS_VISIBLE; i++) { 
-            g.drawLine(0, i * CELL_SIZE, boardPixelWidth, i * CELL_SIZE);
+            g.drawLine(0, i * cellSize, boardPixelWidth, i * cellSize);
         }
     }
 
@@ -248,7 +263,7 @@ private void spawnNewPiece() {
             for (int yGrid = HIDDEN_ROWS_ABOVE; yGrid < TOTAL_BOARD_HEIGHT_CELLS; yGrid++) {
                 if (grid[x][yGrid] != null) {
                     int yScreen = yGrid - HIDDEN_ROWS_ABOVE; 
-                    drawSquare(g, x * CELL_SIZE, yScreen * CELL_SIZE, grid[x][yGrid]);
+                    drawSquare(g, x * cellSize, yScreen * cellSize, grid[x][yGrid]);
                 }
             }
         }
@@ -262,82 +277,55 @@ private void spawnNewPiece() {
 
                 if (yGrid >= HIDDEN_ROWS_ABOVE) {
                     int yScreen = yGrid - HIDDEN_ROWS_ABOVE;
-                    drawSquare(g, xGrid * CELL_SIZE, yScreen * CELL_SIZE, currentPiece.getColor());
+                    drawSquare(g, xGrid * cellSize, yScreen * cellSize, currentPiece.getColor());
                 }
-            }
-        }
-    }
-
-    private void drawNextPiecePreview(Graphics g) {
-        if (nextPiece.getPieceShape() != Shape.PieceShape.NoShape && isStarted) {
-            int previewAreaX = (BOARD_WIDTH_CELLS + 1) * CELL_SIZE;
-            int previewAreaY = CELL_SIZE; 
-
-            g.setColor(Color.LIGHT_GRAY);
-            g.drawString("Next:", previewAreaX, previewAreaY);
-
-            int minPieceX = 0, maxPieceX = 0, minPieceY = 0, maxPieceY = 0;
-            for(int i=0; i<4; i++){
-                minPieceX = Math.min(minPieceX, nextPiece.getX(i));
-                maxPieceX = Math.max(maxPieceX, nextPiece.getX(i));
-                minPieceY = Math.min(minPieceY, nextPiece.getY(i));
-                maxPieceY = Math.max(maxPieceY, nextPiece.getY(i));
-            }
-            int offsetX = previewAreaX + (2 - (minPieceX + maxPieceX)/2) * CELL_SIZE;
-            int offsetY = previewAreaY + CELL_SIZE + (2 - (minPieceY + maxPieceY)/2) * CELL_SIZE;
-
-
-            for (int i = 0; i < 4; i++) {
-                int x = nextPiece.getX(i);
-                int y = nextPiece.getY(i);
-                drawSquare(g, offsetX + x * CELL_SIZE, offsetY + y * CELL_SIZE, nextPiece.getColor());
             }
         }
     }
 
     private void drawSquare(Graphics g, int screenX, int screenY, Color color) {
         g.setColor(color);
-        g.fillRect(screenX + 1, screenY + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+        g.fillRect(screenX + 1, screenY + 1, cellSize - 2, cellSize - 2);
 
         g.setColor(color.brighter());
-        g.drawLine(screenX, screenY + CELL_SIZE - 1, screenX, screenY); 
-        g.drawLine(screenX, screenY, screenX + CELL_SIZE - 1, screenY); 
+        g.drawLine(screenX, screenY + cellSize - 1, screenX, screenY); 
+        g.drawLine(screenX, screenY, screenX + cellSize - 1, screenY); 
 
         g.setColor(color.darker());
-        g.drawLine(screenX + 1, screenY + CELL_SIZE - 1, screenX + CELL_SIZE - 1, screenY + CELL_SIZE - 1); 
-        g.drawLine(screenX + CELL_SIZE - 1, screenY + CELL_SIZE - 1, screenX + CELL_SIZE - 1, screenY + 1); 
+        g.drawLine(screenX + 1, screenY + cellSize - 1, screenX + cellSize - 1, screenY + cellSize - 1); 
+        g.drawLine(screenX + cellSize - 1, screenY + cellSize - 1, screenX + cellSize - 1, screenY + 1); 
     }
 
     private void drawPauseScreen(Graphics g) {
         g.setColor(new Color(50, 50, 50, 180)); 
-        g.fillRect(0, 0, BOARD_WIDTH_CELLS * CELL_SIZE, BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE);
+        g.fillRect(0, 0, BOARD_WIDTH_CELLS * cellSize, BOARD_HEIGHT_CELLS_VISIBLE * cellSize);
         g.setColor(Color.WHITE);
         g.setFont(new Font("Helvetica", Font.BOLD, 20));
         String msg = "PAUSED";
         FontMetrics fm = getFontMetrics(g.getFont());
         int msgWidth = fm.stringWidth(msg);
-        g.drawString(msg, (BOARD_WIDTH_CELLS * CELL_SIZE - msgWidth) / 2, (BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE) / 2);
+        g.drawString(msg, (BOARD_WIDTH_CELLS * cellSize - msgWidth) / 2, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2);
     }
 
     private void drawGameOverScreen(Graphics g) {
         g.setColor(new Color(50, 50, 50, 200)); 
-        g.fillRect(0, 0, BOARD_WIDTH_CELLS * CELL_SIZE, BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE);
+        g.fillRect(0, 0, BOARD_WIDTH_CELLS * cellSize, BOARD_HEIGHT_CELLS_VISIBLE * cellSize);
         g.setColor(Color.RED);
         g.setFont(new Font("Helvetica", Font.BOLD, 24));
         String msg = "GAME OVER";
         FontMetrics fm = getFontMetrics(g.getFont());
         int msgWidth = fm.stringWidth(msg);
-        g.drawString(msg, (BOARD_WIDTH_CELLS * CELL_SIZE - msgWidth) / 2, (BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE) / 2 - 20);
+        g.drawString(msg, (BOARD_WIDTH_CELLS * cellSize - msgWidth) / 2, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 - 20);
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Helvetica", Font.PLAIN, 14));
         String scoreMsg = "Final Score: " + score;
         int scoreMsgWidth = fm.stringWidth(scoreMsg);
-        g.drawString(scoreMsg, (BOARD_WIDTH_CELLS * CELL_SIZE - scoreMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE) / 2 + 10); 
+        g.drawString(scoreMsg, (BOARD_WIDTH_CELLS * cellSize - scoreMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 10); 
 
         String restartMsg = "Press 'S' to Restart";
         int restartMsgWidth = fm.stringWidth(restartMsg);
-        g.drawString(restartMsg, (BOARD_WIDTH_CELLS * CELL_SIZE - restartMsgWidth) / 2 + 15, (BOARD_HEIGHT_CELLS_VISIBLE * CELL_SIZE) / 2 + 40);
+        g.drawString(restartMsg, (BOARD_WIDTH_CELLS * cellSize - restartMsgWidth) / 2 + 15, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 40);
     }
 
 
