@@ -35,6 +35,11 @@ public class Board extends JPanel implements ActionListener {
 
     private Tetris parentFrame;
 
+    private static final int INITIAL_TIMER_DELAY = 400;
+    private static final int MIN_TIMER_DELAY = 80;
+    private static final int SPEEDUP_LINES_STEP = 10;
+    private static final int SPEEDUP_AMOUNT = 40;
+
     public Board(Tetris parent) {
         this.parentFrame = parent;
         initBoard();
@@ -52,7 +57,7 @@ public class Board extends JPanel implements ActionListener {
         nextPiece = new Shape();
         nextPiece.setPieceShape(Shape.PieceShape.getRandomShape()); 
 
-        timer = new Timer(400, this); 
+        timer = new Timer(INITIAL_TIMER_DELAY, this); 
     }
 
     public void start() {
@@ -84,7 +89,8 @@ public class Board extends JPanel implements ActionListener {
 
     private void updateStatusBar() {
         // Remove: statusBar.setText(...)
-        parentFrame.updateScoreAndLines(score, numLinesRemoved);
+        int level = (numLinesRemoved / SPEEDUP_LINES_STEP) + 1;
+        parentFrame.updateScoreAndLines(score, numLinesRemoved, level);
         // Optionally, show instructions somewhere else
     }
 
@@ -101,23 +107,22 @@ private void spawnNewPiece() {
     currentPiece.setPieceShape(nextPiece.getPieceShape());
     nextPiece.setPieceShape(Shape.PieceShape.getRandomShape());
 
-    curPieceX = BOARD_WIDTH_CELLS / 2; 
-
-
+    curPieceX = BOARD_WIDTH_CELLS / 2;
     curPieceY = -currentPiece.getTopmostRelativeY();
-
 
     // Update next shape preview panel
     parentFrame.getNextPanel().setNextShape(nextPiece);
 
     if (!tryMove(currentPiece, curPieceX, curPieceY)) {
         currentPiece.setPieceShape(Shape.PieceShape.NoShape);
-        timer.stop();
         isStarted = false;
-        isFallingFinished = true; 
+        isFallingFinished = true;
+        timer.stop();
+        repaint(); // <-- Ensure repaint is called so paintComponent draws game over
+        parentFrame.updateHighScore(score); // Add this line
         // Optionally show game over in side panel or overlay
     } else {
-        isFallingFinished = false; 
+        isFallingFinished = false;
     }
     updateStatusBar();
 }
@@ -207,8 +212,15 @@ private void spawnNewPiece() {
             else if (numFullLinesInThisTurn == 3) score += 500;
             else if (numFullLinesInThisTurn == 4) score += 800; 
 
+            updateTimerSpeed();
             updateStatusBar();
         }
+    }
+
+    private void updateTimerSpeed() {
+        int newDelay = INITIAL_TIMER_DELAY - ((numLinesRemoved / SPEEDUP_LINES_STEP) * SPEEDUP_AMOUNT);
+        if (newDelay < MIN_TIMER_DELAY) newDelay = MIN_TIMER_DELAY;
+        timer.setDelay(newDelay);
     }
 
     @Override
@@ -315,17 +327,34 @@ private void spawnNewPiece() {
         String msg = "GAME OVER";
         FontMetrics fm = getFontMetrics(g.getFont());
         int msgWidth = fm.stringWidth(msg);
-        g.drawString(msg, (BOARD_WIDTH_CELLS * cellSize - msgWidth) / 2, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 - 20);
+        g.drawString(msg, (BOARD_WIDTH_CELLS * cellSize - msgWidth) / 2, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 - 40);
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Helvetica", Font.PLAIN, 14));
         String scoreMsg = "Final Score: " + score;
         int scoreMsgWidth = fm.stringWidth(scoreMsg);
-        g.drawString(scoreMsg, (BOARD_WIDTH_CELLS * cellSize - scoreMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 10); 
+        g.drawString(scoreMsg, (BOARD_WIDTH_CELLS * cellSize - scoreMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 - 10);
 
+        // Show previous high score
+        int prevHigh = parentFrame.getPreviousHighScore();
+        String prevHighMsg = "Previous High Score: " + prevHigh;
+        int prevHighMsgWidth = fm.stringWidth(prevHighMsg);
+        g.drawString(prevHighMsg, (BOARD_WIDTH_CELLS * cellSize - prevHighMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 10);
+
+        // Show "New High Score!" if achieved
+        if (parentFrame.wasLastGameHighScore()) {
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("Helvetica", Font.BOLD, 18));
+            String newHighMsg = "New High Score!";
+            int newHighMsgWidth = fm.stringWidth(newHighMsg);
+            g.drawString(newHighMsg, (BOARD_WIDTH_CELLS * cellSize - newHighMsgWidth) / 2 + 20, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 35);
+        }
+
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Helvetica", Font.PLAIN, 14));
         String restartMsg = "Press 'S' to Restart";
         int restartMsgWidth = fm.stringWidth(restartMsg);
-        g.drawString(restartMsg, (BOARD_WIDTH_CELLS * cellSize - restartMsgWidth) / 2 + 15, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 40);
+        g.drawString(restartMsg, (BOARD_WIDTH_CELLS * cellSize - restartMsgWidth) / 2 + 15, (BOARD_HEIGHT_CELLS_VISIBLE * cellSize) / 2 + 60);
     }
 
 

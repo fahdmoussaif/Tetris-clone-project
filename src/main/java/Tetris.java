@@ -6,12 +6,18 @@ public class Tetris extends JFrame {
     private Board board;
     private JLabel scoreLabel;
     private JLabel linesLabel;
+    private JLabel levelLabel; // Add this line
+    private JLabel highScoreLabel; // Add this line
     private NextPanel nextPanel;
+    private HighScoreManager highScoreManager; // Add this line
+    private boolean lastGameWasHighScore = false; // Add this line
+    private JButton resetHighScoreButton; // Add this line
 
     public static final int BOARD_WIDTH_IN_CELLS = 10;
     public static final int BOARD_HEIGHT_IN_CELLS_VISIBLE = 20;
 
     public Tetris() {
+        highScoreManager = new HighScoreManager(); // Add this line
         initUI();
     }
 
@@ -23,8 +29,8 @@ public class Tetris extends JFrame {
         // Board panel
         board = new Board(this);
         board.setBackground(Color.BLACK);
-        board.setMinimumSize(new Dimension(300, 600));
-        board.setPreferredSize(new Dimension(480, 960));
+        board.setMinimumSize(new Dimension(400, 800)); // Bigger: 10x20 cells, 40px per cell
+        board.setPreferredSize(new Dimension(600, 1200)); // Bigger: 10x20 cells, 60px per cell
 
         // Instructions panel (middle)
         JPanel instructionsPanel = new JPanel();
@@ -33,6 +39,7 @@ public class Tetris extends JFrame {
         instructionsPanel.setBorder(BorderFactory.createEmptyBorder(40, 30, 40, 30));
         instructionsPanel.setMinimumSize(new Dimension(250, 200));
         instructionsPanel.setPreferredSize(new Dimension(300, 400));
+        instructionsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel title = new JLabel("How to Play");
         title.setForeground(Color.ORANGE);
@@ -62,10 +69,24 @@ public class Tetris extends JFrame {
         instructions.setAlignmentX(Component.CENTER_ALIGNMENT);
         instructions.setLineWrap(true);
         instructions.setWrapStyleWord(true);
+        instructions.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        // Center the text in the JTextArea
+        instructions.setHighlighter(null);
+        instructions.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        instructions.setBorder(null);
+
+        // Use a panel to center the JTextArea horizontally
+        JPanel instructionsTextPanel = new JPanel();
+        instructionsTextPanel.setLayout(new BoxLayout(instructionsTextPanel, BoxLayout.X_AXIS));
+        instructionsTextPanel.setOpaque(false);
+        instructionsTextPanel.add(Box.createHorizontalGlue());
+        instructionsTextPanel.add(instructions);
+        instructionsTextPanel.add(Box.createHorizontalGlue());
 
         instructionsPanel.add(title);
         instructionsPanel.add(Box.createVerticalStrut(20));
-        instructionsPanel.add(instructions);
+        instructionsPanel.add(instructionsTextPanel);
         instructionsPanel.add(Box.createVerticalGlue());
 
         // Side panel for next shape and score (right)
@@ -86,9 +107,16 @@ public class Tetris extends JFrame {
         linesLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         linesLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        levelLabel = new JLabel("Level: 1"); // Add this line
+        levelLabel.setForeground(Color.WHITE);
+        levelLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        levelLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         sidePanel.add(scoreLabel);
         sidePanel.add(Box.createVerticalStrut(10));
         sidePanel.add(linesLabel);
+        sidePanel.add(Box.createVerticalStrut(10));
+        sidePanel.add(levelLabel); // Add this line
         sidePanel.add(Box.createVerticalStrut(40));
 
         nextPanel = new NextPanel();
@@ -101,6 +129,25 @@ public class Tetris extends JFrame {
         ));
         sidePanel.add(nextPanel);
 
+        // Move highScoreLabel below nextPanel
+        highScoreLabel = new JLabel("High Score: " + highScoreManager.getHighScore());
+        highScoreLabel.setForeground(Color.YELLOW);
+        highScoreLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        highScoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sidePanel.add(Box.createVerticalStrut(20));
+        sidePanel.add(highScoreLabel);
+
+        // Add reset button below highScoreLabel
+        resetHighScoreButton = new JButton("Reset High Score");
+        resetHighScoreButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        resetHighScoreButton.setFocusable(false);
+        resetHighScoreButton.addActionListener(e -> {
+            highScoreManager.resetHighScore();
+            highScoreLabel.setText("High Score: 0");
+        });
+        sidePanel.add(Box.createVerticalStrut(10));
+        sidePanel.add(resetHighScoreButton);
+
         sidePanel.add(Box.createVerticalGlue());
 
         // Layout constraints for board, instructions, and side panel
@@ -109,22 +156,25 @@ public class Tetris extends JFrame {
         gbc.insets = new Insets(0, 0, 0, 0);
         gbc.anchor = GridBagConstraints.CENTER;
 
-        // Board: take as much space as possible (left)
+        // Board: 50% of width (adjusted)
         gbc.gridx = 0;
-        gbc.weightx = 1.0;
+        gbc.weightx = 0.5;
+        gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(board, gbc);
 
-        // Instructions panel (middle)
+        // Instructions panel: 25% of width (adjusted)
         gbc.gridx = 1;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.VERTICAL;
+        gbc.weightx = 0.25;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(instructionsPanel, gbc);
 
-        // Side panel: fixed width, fill vertically (right)
+        // Side panel: 25% of width (adjusted)
         gbc.gridx = 2;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.VERTICAL;
+        gbc.weightx = 0.25;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(sidePanel, gbc);
 
         setContentPane(mainPanel);
@@ -145,9 +195,34 @@ public class Tetris extends JFrame {
         });
     }
 
-    public void updateScoreAndLines(int score, int lines) {
+    // Change this method to accept level
+    public void updateScoreAndLines(int score, int lines, int level) {
         scoreLabel.setText("Score: " + score);
         linesLabel.setText("Lines: " + lines);
+        levelLabel.setText("Level: " + level);
+    }
+
+    // Add this method to update high score label and set lastGameWasHighScore
+    public void updateHighScore(int score) {
+        int currentHigh = highScoreManager.getHighScore();
+        if (score > currentHigh) {
+            highScoreManager.saveScore(score);
+            highScoreLabel.setText("High Score: " + score);
+            lastGameWasHighScore = true;
+        } else {
+            highScoreLabel.setText("High Score: " + currentHigh);
+            lastGameWasHighScore = false;
+        }
+    }
+
+    // Add this method to get the previous high score
+    public int getPreviousHighScore() {
+        return highScoreManager.getHighScore();
+    }
+
+    // Add this method to check if last game was a high score
+    public boolean wasLastGameHighScore() {
+        return lastGameWasHighScore;
     }
 
     public NextPanel getNextPanel() {
